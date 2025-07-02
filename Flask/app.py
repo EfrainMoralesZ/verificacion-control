@@ -1,4 +1,7 @@
 from flask import Flask, render_template, request, redirect, session
+from flask_cors import CORS
+from flask import url_for
+from flask import make_response
 import psycopg2
 
 app = Flask(__name__)
@@ -41,48 +44,80 @@ def crear_tabla_usuarios():
     except Exception as e:
         print(f"❌ Error al crear/verificar la tabla: {e}")
 
+# -----------------------------
+# RUTA DE VALIDACION DE USUARIO
+# -----------------------------
+def validar_usuario(nombre, contrasenia):
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+
+        # Consulta con nombres correctos de columnas
+        cursor.execute(
+            "SELECT * FROM usuarios WHERE nombre = %s AND contrasenia = %s",
+            (nombre, contrasenia)
+        )
+        usuario = cursor.fetchone()
+
+        cursor.close()
+        conn.close()
+
+        return usuario  # Si es None no existe
+    except Exception as e:
+        print(f"Error validando usuario: {e}")
+        return None
+
 # --------------------------
 # RUTA LOGIN
 # --------------------------
-@app.route('/', methods=['GET', 'POST'])
+@app.route('/')
+def inicio():
+    return redirect(url_for('login'))
+
+@app.route('/login', methods=['GET', 'POST'])
 def login():
-    global attempts_left
     error = None
+    global attempts_left
 
+    # if 'usuario' in session:
+    #     return redirect(url_for('dashboard'))
+    
     if request.method == 'POST':
-        usuario = request.form['usuario'].strip()
-        contrasena = request.form['contrasena'].strip()
+        usuario = request.form['usuario']
+        contrasena = request.form['contrasena']
 
-        if not usuario or not contrasena:
-            error = "Ingrese usuario y contrasenia."
+        user = validar_usuario(usuario, contrasena)  # ✅ usa tu función bien hecha
+
+        if user:
+            session['usuario'] = usuario
+            attempts_left = 3
+            return redirect(url_for('dashboard'))
         else:
-            try:
-                conn = get_db_connection()
-                cursor = conn.cursor()
+            attempts_left -= 1
+            error = f"Usuario o contraseña incorrectos. Intentos restantes: {attempts_left}"
+            if attempts_left <= 0:
+                error = "Has excedido el número de intentos."
 
-                query = "SELECT rol FROM usuarios WHERE nombre = %s AND contrasenia = %s"
-                cursor.execute(query, (usuario, contrasena))
-                result = cursor.fetchone()
+    return render_template('login.html', error=error)
 
-                cursor.close()
-                conn.close()
+# --------------------------
+# RUTA DASHBOARD
+# --------------------------
+@app.route('/dashboard')
+def dashboard():
+    if 'usuario' in session:
+        return render_template('dashboard.html', usuario=session['usuario'])
+    else:
+        return redirect(url_for('login'))
 
-                if result:
-                    rol = result[0]
-                    session['usuario'] = usuario
-                    session['rol'] = rol
-                    attempts_left = 3  # reset
-                    return f"Bienvenido {usuario}, tu rol es {rol}"
-                else:
-                    attempts_left -= 1
-                    if attempts_left > 0:
-                        error = f"Usuario o contrasenia incorrectos. Intentos restantes: {attempts_left}"
-                    else:
-                        error = "Demasiados intentos fallidos. Reinicie el navegador."
-            except Exception as e:
-                error = f"Error al conectar con la base de datos: {str(e)}"
 
-    return render_template('Login.html', error=error)
+# --------------------------
+# RUTA CERRAR SESIÓN
+# --------------------------
+@app.route('/logout')
+def logout():
+    session.clear()
+    return redirect(url_for('login'))
 
 # --------------------------
 # EJECUCIÓN PRINCIPAL

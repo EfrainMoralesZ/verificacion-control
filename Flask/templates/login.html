@@ -85,15 +85,15 @@
         {% if error %}
             <div class="error">{{ error }}</div>
         {% endif %}
-        <form method="POST">
-            <label for="usuario">Usuario:</label>
-            <input type="text" id="usuario" name="usuario" required>
-            
-            <label for="contrasena">Contraseña:</label>
-            <input type="password" id="contrasena" name="contrasena" required>
-            
-            <button type="submit">Entrar</button>
+        <form method="POST" action="/login">
+            <input type="text" name="usuario" placeholder="Usuario">
+            <input type="password" name="contrasena" placeholder="Contraseña">
+            <button type="submit">Iniciar sesión</button>
+            {% if error %}
+                <p style="color:red;">{{ error }}</p>
+            {% endif %}
         </form>
+
     </div>
 </body>
 </html>
