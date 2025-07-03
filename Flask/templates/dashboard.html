@@ -20,8 +20,7 @@
     /* Sidebar */
     .sidebar {
       width: 220px;
-      background-color: #f0d400;
-      color: white;
+      background-color: #ecda24;
       padding: 20px;
     }
 
@@ -42,7 +41,7 @@
     }
 
     .sidebar a:hover {
-      background-color: #d9ff00;
+      background-color: #ecda24;
     }
 
     /* Contenido principal */
@@ -83,7 +82,17 @@
     tr:hover {
       background-color: #f9f9f9;
     }
+
+    .estado-activo {
+      color: green;
+    }
+
+    .estado-inactivo {
+      color: red;
+    }
+
   </style>
+
 </head>
 <body>
   <!-- Sidebar de navegación -->
@@ -94,85 +103,34 @@
     <a href="#">👤 Usuarios</a>
     <a href="#">📦 Registros</a>
     <a href="#">⚙️ Configuración</a>
-    <a href="#">🚪 Cerrar sesión</a>
+    <a href="/logout">🚪 Cerrar sesión</a>
   </div>
 
   <!-- Contenido principal -->
   <div class="main">
-    <h1>Bienvenido</h1>
+      <h2>Bienvenido {{ nombre }} (Rol: {{ rol }})</h2>
 
-    <div class="table-container">
-      <h2>Usuarios Registrados</h2>
-      <table>
+      {% if rol == 'administrador' %}
+      <table border="1">
         <thead>
           <tr>
-            <th>ID</th>
-            <th>Usuario</th>
-            <th>Rol</th>
-            <th>Estado</th>
+            <th>ID</th><th>Usuario</th><th>Rol</th><th>Activo</th>
           </tr>
         </thead>
         <tbody>
+          {% for u in usuarios %}
           <tr>
-            <td>1</td>
-            <td>admin</td>
-            <td>Administrador</td>
-            <td>Activo</td>
+            <td>{{ u[0] }}</td>
+            <td>{{ u[1] }}</td>
+            <td>{{ u[2] }}</td>
+            <td>{{ 'Sí' if u[3] else 'No' }}</td>
           </tr>
-          <tr>
-            <td>2</td>
-            <td>juan23</td>
-            <td>Operador</td>
-            <td>Inactivo</td>
-          </tr>
-           <td>2</td>
-            <td>Marcos</td>
-            <td>Sub Grente - Administrador</td>
-            <td>Inactivo</td>
-          </tr>
-           <td>2</td>
-            <td>Mario</td>
-            <td>Coordinator - Administrador</td>
-            <td>Inactivo</td>
-          </tr>
-          <td>2</td>
-            <td>Aitiana</td>
-            <td>Administrador</td>
-            <td>Inactivo</td>
-          </tr>
-          <td>2</td>
-            <td>Brayan</td>
-            <td>Sub Grente - Administrador</td>
-            <td>Inactivo</td>
-          </tr>
-           <td>2</td>
-            <td>David</td>
-            <td>Captura</td>
-            <td>Inactivo</td>
-          </tr>
-           <td>2</td>
-            <td>Alejandro</td>
-            <td>Captura</td>
-            <td>Inactivo</td>
-          </tr>
-           <td>2</td>
-            <td>Zais</td>
-            <td>Captura</td>
-            <td>Inactivo</td>
-          </tr>
-           <td>2</td>
-            <td>Braulio</td>
-            <td>Captura</td>
-            <td>Inactivo</td>
-          </tr>
-           <td>2</td>
-            <td>Oscar</td>
-            <td>Captura</td>
-            <td>Inactivo</td>
-          </tr>
-          <!-- Puedes llenar esta tabla con datos desde Flask usando Jinja2 -->
+          {% endfor %}
         </tbody>
       </table>
+      {% else %}
+      <p>No tienes permiso para ver esta información.</p>
+      {% endif %}
     </div>
   </div>
 </body>
