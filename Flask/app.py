@@ -163,8 +163,11 @@ def login():
             else:
                 error = f"Usuario o contraseña incorrectos. Intentos restantes: {attempts_left}"
 
-    return render_template('login.html', error=error)
-
+    response = make_response(render_template('login.html', error=error))
+    response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, post-check=0, pre-check=0, max-age=0'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '-1'
+    return response
 # --------------------------
 # VALIDACION DE CREACION DE USUARIOS
 # en proceso
@@ -213,6 +216,7 @@ def registrar_usuario():
 # --------------------------
 @app.route('/dashboard')
 def dashboard():
+    
     if 'usuario' not in session:
         return redirect(url_for('login'))
 

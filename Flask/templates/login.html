@@ -12,7 +12,7 @@
 
         body {
             font-family: 'Segoe UI', sans-serif;
-            background: #f0f2f5;
+            background: #ecda24;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -45,18 +45,18 @@
             width: 100%;
             padding: 12px;
             margin-bottom: 20px;
-            border: 1px solid #ccc;
+            border: 1px solid #ecda24;
             border-radius: 10px;
             transition: border-color 0.3s;
         }
 
         input:focus {
-            border-color: #007bff;
+            border-color: #ecda24;
             outline: none;
         }
 
         button {
-            background-color: #007bff;
+            background-color: #00eb10;
             color: white;
             border: none;
             padding: 12px;
@@ -68,7 +68,7 @@
         }
 
         button:hover {
-            background-color: #0056b3;
+            background-color: #ecda24;
         }
 
         .error {
@@ -89,9 +89,6 @@
             <input type="text" name="usuario" placeholder="Usuario">
             <input type="password" name="contrasena" placeholder="Contraseña">
             <button type="submit">Iniciar sesión</button>
-            {% if error %}
-                <p style="color:red;">{{ error }}</p>
-            {% endif %}
         </form>
 
     </div>

@@ -306,8 +306,15 @@
     <div class="modal-contenido">
       <span class="cerrar" onclick="cerrarModal('modal-escaner')">&times;</span>
       <h2>📷 Escanear / Capturar código</h2>
+
       <input type="text" id="codigo_input" placeholder="Escanea o escribe el código..." autofocus>
       <div class="resultado" id="resultado"></div>
+      <div class="resultado" id="item_resultado"></div>
+
+      <div style="margin-top: 20px;">
+        <button onclick="guardarCodigo()">Guardar</button>
+        <button onclick="borrarCodigo()">Borrar</button>
+      </div>
     </div>
   </div>
 
@@ -340,7 +347,7 @@
           <option value="Cumple">Cumple</option>
           <option value="No cumple">No cumple</option>
         </select>
-
+        
         <button type="submit">Guardar captura</button>
       </form>
       <div class="resultado" id="captura_resultado"></div>
@@ -356,6 +363,61 @@
     function cerrarModal(id) {
       document.getElementById(id).style.display = 'none';
     }
+
+  // Funciones de escaner -->
+    const input = document.getElementById('codigo_input');
+  const resultadoDiv = document.getElementById('resultado');
+  const itemDiv = document.getElementById('item_resultado');
+  let ultimoCodigo = "";
+
+  input.addEventListener('keypress', function (e) {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const codigo = input.value.trim();
+      if (codigo) {
+        fetch('/validar_codigo', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ codigo })
+        })
+        .then(response => response.json())
+        .then(data => {
+          resultadoDiv.textContent = 'Estado NOM: ' + data.resultado;
+          itemDiv.textContent = 'Item: ' + (data.item || 'No encontrado');
+          ultimoCodigo = codigo;
+        });
+      }
+    }
+  });
+
+  function guardarCodigo() {
+    if (!ultimoCodigo) {
+      alert("Primero escanea un código.");
+      return;
+    }
+
+    fetch('/guardar_escaneo', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ codigo: ultimoCodigo })
+    })
+    .then(res => res.json())
+    .then(res => {
+      alert(res.mensaje);
+      input.value = "";
+      resultadoDiv.textContent = "";
+      itemDiv.textContent = "";
+      ultimoCodigo = "";
+    });
+  }
+
+  function borrarCodigo() {
+    input.value = "";
+    resultadoDiv.textContent = "";
+    itemDiv.textContent = "";
+    ultimoCodigo = "";
+    input.focus();
+  }  
   </script>
 </body>
 </html>
