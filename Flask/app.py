@@ -131,6 +131,13 @@ def validar_usuario(usuario, contrasena):
 # --------------------------
 # RUTA LOGIN
 # --------------------------
+def login_required(f): # Verifica si hay una sesion iniciada
+    @wraps(f)
+    def decorador(*args, **kwargs):
+        if 'usuario' not in session:
+            return redirect(url_for('login'))
+        return f(*args, **kwargs)
+    return decorador
 @app.route('/')
 def inicio():
     return redirect(url_for('login'))
@@ -215,6 +222,7 @@ def registrar_usuario():
 # RUTA DASHBOARD
 # --------------------------
 @app.route('/dashboard')
+
 def dashboard():
     
     if 'usuario' not in session:
