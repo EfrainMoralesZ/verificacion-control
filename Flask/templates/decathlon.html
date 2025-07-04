@@ -1,0 +1,361 @@
+ <!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Decathlon - Validación por Escáner</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      display: flex;
+      height: 100vh;
+      background-color: #f4f6f9;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      width: 220px;
+      background-color: #ecda24;
+      padding: 20px;
+    }
+
+    .sidebar h1 {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    .sidebar a {
+      display: block;
+      color: black;
+      text-decoration: none;
+      margin: 15px 0;
+      padding: 10px;
+      border-radius: 8px;
+      font-weight: bold;
+      transition: background-color 0.2s;
+    }
+
+    .sidebar a:hover {
+      background-color: #d6c514;
+    }
+
+    /* Contenido principal */
+    .main {
+      flex-grow: 1;
+      padding: 40px;
+    }
+
+    .seccion {
+      margin-bottom: 30px;
+    }
+
+    input[type="text"] {
+      padding: 10px;
+      width: 300px;
+      font-size: 16px;
+    }
+
+    .resultado {
+      margin-top: 10px;
+      font-weight: bold;
+      font-size: 18px;
+    }
+
+    button {
+      padding: 10px 15px;
+      background-color: #ecda24;
+      border: none;
+      font-weight: bold;
+      cursor: pointer;
+      border-radius: 6px;
+      transition: background-color 0.2s;
+    }
+
+    button:hover {
+      background-color: #d6c514;
+    }
+
+    .mensaje {
+    margin: 20px 0;
+    background-color: #fff3cd;
+    padding: 10px;
+    border: 1px solid #ffeeba;
+    border-radius: 6px;
+    color: #856404;
+  }
+
+  .contenedor {
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+    margin-top: 30px;
+  }
+
+  .card {
+    background-color: white;
+    border-radius: 12px;
+    padding: 25px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+
+  .card h2 {
+    margin-bottom: 20px;
+    font-size: 20px;
+    color: #333;
+  }
+
+  input[type="file"],
+  input[type="text"] {
+    width: 100%;
+    padding: 10px;
+    font-size: 15px;
+    margin-bottom: 15px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+  }
+
+  .resultado {
+    margin-top: 10px;
+    font-weight: bold;
+    font-size: 18px;
+    color: #333;
+  }
+
+
+  form label {
+  display: block;
+  margin-top: 10px;
+  font-weight: bold;
+  }
+
+  form input, form select {
+    width: 100%;
+    padding: 8px;
+    margin-top: 5px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+  }
+
+  .modal {
+    display: none; /* por defecto oculto */
+    position: fixed;
+    z-index: 999;
+    left: 400px;
+    top: 50px;
+    width: 100%;
+    height: 100%;
+    /* centrado con flexbox */
+    justify-content: center;
+    align-items: center;
+  }
+
+
+  .modal-contenido {
+    background-color: white;
+    padding: 20px 30px;
+    border-radius: 10px;
+    width: 90%;
+    max-width: 500px;
+    box-shadow: 0 12px 12px rgba(0, 0, 0, 0.2);
+
+    /* NO uses margin-top, ni absolute */
+    position: relative;
+  }
+
+
+  .cerrar {
+    position: absolute;
+    top: 15px; right: 20px;
+    font-size: 24px;
+    cursor: pointer;
+    color: #555;
+  }
+
+  .cuadros-contenedor {
+    display: flex;
+    justify-content: center;
+    gap: 40px;
+    margin-top: 40px;
+  }
+
+  .cuadro {
+    width: 300px;
+    height: 400px;
+    background-color: #ecda24;
+    border-radius: 16px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    font-size: 18px;
+    font-weight: bold;
+    text-align: center;
+    cursor: pointer;
+    transition: transform 0.2s, background-color 0.3s;
+  }
+
+  .cuadro:hover {
+    background-color: #d6c514;
+    transform: scale(1.05);
+  }
+
+  @media (max-width: 768px) {
+  body {
+    flex-direction: column;
+  }
+
+  .sidebar {
+    width: 100%;
+    text-align: center;
+  }
+
+  .sidebar h1, .sidebar h3 {
+    margin-bottom: 10px;
+  }
+
+  .sidebar a {
+    display: inline-block;
+    margin: 10px;
+  }
+
+  .main {
+    padding: 20px;
+  }
+
+  .cuadros-contenedor {
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+  }
+
+  .cuadro {
+    width: 90%;
+    max-width: 300px;
+    height: 250px;
+  }
+
+  .modal-contenido {
+    width: 95%;
+    padding: 20px;
+  }
+
+  form input[type="text"], form select {
+    font-size: 16px;
+  }
+
+  h1, h2 {
+    font-size: 20px;
+  }
+}
+
+
+  </style>
+</head>
+<body>
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <h1>V&C</h1>
+    <h3>Menú</h3>
+    <a href="/decathlon">📦 Decathlon</a>
+    <a href="/dashboard">📊 Dashboard</a>
+    <a href="/logout">🚪 Cerrar sesión</a>
+  </div>
+
+  <div class="main">
+  <h1>🧾 Sistema de Validación Decathlon</h1>
+
+  {% if mensaje %}
+    <div class="mensaje">
+      <p><strong>{{ mensaje }}</strong></p>
+    </div>
+  {% endif %}
+
+  <div class="cuadros-contenedor">
+    <div class="cuadro" onclick="abrirModal('modal-clp')">
+      📤<br>Subir CLP
+    </div>
+    <div class="cuadro" onclick="abrirModal('modal-escaner')">
+      📷<br>Escanear Código
+    </div>
+    <div class="cuadro" onclick="abrirModal('modal-captura')">
+      ✍️<br>Captura Manual
+    </div>
+  </div>
+
+
+<!-- MODAL CLP -->
+  <div class="modal" id="modal-clp">
+    <div class="modal-contenido">
+      <span class="cerrar" onclick="cerrarModal('modal-clp')">&times;</span>
+      <h2>📤 Subir CLP (archivo Excel)</h2>
+      <form method="POST" enctype="multipart/form-data">
+        <input type="file" name="clp_file" accept=".xlsx,.xls" required>
+        <button type="submit">Cargar archivo</button>
+      </form>
+    </div>
+  </div>
+
+<!-- MODAL ESCÁNER -->
+  <div class="modal" id="modal-escaner">
+    <div class="modal-contenido">
+      <span class="cerrar" onclick="cerrarModal('modal-escaner')">&times;</span>
+      <h2>📷 Escanear / Capturar código</h2>
+      <input type="text" id="codigo_input" placeholder="Escanea o escribe el código..." autofocus>
+      <div class="resultado" id="resultado"></div>
+    </div>
+  </div>
+
+<!-- MODAL CAPTURA -->
+  <div class="modal" id="modal-captura">
+    <div class="modal-contenido">
+      <span class="cerrar" onclick="cerrarModal('modal-captura')">&times;</span>
+      <h2>✍️ Captura Manual de Datos</h2>
+      <form id="form-captura" onsubmit="capturarDatos(event)">
+        <label>Código de barras:</label>
+        <input type="text" name="codigo" required>
+
+        <label>Item:</label>
+        <input type="text" name="item" required>
+
+        <label>Selecciona tipo de información NOM:</label>
+        <select name="tipo_nom" required>
+          <option value="">Selecciona</option>
+          <option value="Instrucciones de cuidado">Instrucciones de cuidado</option>
+          <option value="Insumos">Insumos</option>
+          <option value="País de origen">País de origen</option>
+          <option value="Talla">Talla</option>
+          <option value="Importador">Importador</option>
+          <option value="Marca">Marca</option>
+        </select>
+
+        <label>Motivo:</label>
+        <select name="motivo" required>
+          <option value="">Selecciona</option>
+          <option value="Cumple">Cumple</option>
+          <option value="No cumple">No cumple</option>
+        </select>
+
+        <button type="submit">Guardar captura</button>
+      </form>
+      <div class="resultado" id="captura_resultado"></div>
+    </div>
+  </div>
+
+  <!-- Script -->
+  <script>
+    function abrirModal(id) {
+      document.getElementById(id).style.display = 'block';
+    }
+
+    function cerrarModal(id) {
+      document.getElementById(id).style.display = 'none';
+    }
+  </script>
+</body>
+</html>

@@ -1,11 +1,13 @@
-from flask import Flask, render_template, request, redirect, session
+from flask import Flask, render_template, request, redirect, session, jsonify
 from flask_cors import CORS
 from flask import url_for
 from flask import make_response
 import psycopg2
+import pandas as pd
 
 app = Flask(__name__)
 app.secret_key = 'clave_secreta'
+df_clp = None # Funcion para leer lo excel
 
 # Variable global para control de intentos
 attempts_left = 3
@@ -49,18 +51,13 @@ def agregar_columna_estado():
         print(f"Error agregando columna estado: {e}")
 
 def obtener_todos_usuarios():
-    try:
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute("""SELECT usuario_id, nombre, rol, estado FROM usuarios ORDER BY usuario_id
-                      """)
-        usuarios = cursor.fetchall()
-        cursor.close()
-        conn.close()
-        return usuarios
-    except Exception as e:
-        print(f"Error al obtener usuarios: {e}")
-        return []
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT * FROM usuarios")
+    usuarios = cur.fetchall()
+    cur.close()
+    conn.close()
+    return usuarios
     
 # --------------------------
 # CREACIÓN DE TABLA (solo una vez)
@@ -75,8 +72,8 @@ def crear_tabla_usuarios():
             CREATE TABLE IF NOT EXISTS usuarios (
                 usuario_id SERIAL PRIMARY KEY,
                 nombre VARCHAR(50) NOT NULL,
-                contrasenia VARCHAR(50) NOT NULL,
-                rol VARCHAR(20) NOT NULL DEFAULT 'usuario'),
+                contrasena VARCHAR(50) NOT NULL,
+                rol VARCHAR(20) NOT NULL DEFAULT 'usuario',
                 estado BOOLEAN NOT NULL DEFAULT TRUE
             """)
 
@@ -92,22 +89,22 @@ def crear_tabla_usuarios():
 # --------------------------    
 def insertar_usuarios():
     usuarios = [
-        ('MARCOS', 'OughTg', 'administrador'),
-        ('MARIO', 'OrYEVE', 'administrador'),
-        ('AITANA', 'LymERb', 'administrador'),
-        ('BRAYAN', 'MonSYn', 'administrador'),
-        ('ALEJANDRO', 'rTifoi', 'captura'),
-        ('DAVID', 'ChemOU', 'captura'),
-        ('ZAID', 'ChemOU', 'captura'),
-        ('BRAULIO', 'ChemOU', 'captura'),
-        ('OSCAR', 'ChemOU', 'captura')
+        ('MARCOS', 'OughTg', 'Administrador'),
+        ('MARIO', 'OrYEVE', 'Administrador'),
+        ('AITANA', 'LymERb', 'Administrador'),
+        ('BRAYAN', 'MonSYn', 'Administrador'),
+        ('ALEJANDRO', 'rTifoi', 'Captura'),
+        ('DAVID', 'ChemOU', 'Captura'),
+        ('ZAID', 'tRosef', 'Captura'),
+        ('BRAULIO', 'ZisenA', 'Captura'),
+        ('OSCAR', 'NitRap', 'Captura')
     ]
     
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
         cursor.executemany(
-            "INSERT INTO usuarios (nombre, contrasenia, rol) VALUES (%s, %s, %s)",
+            "INSERT INTO usuarios (nombre, contrasena, rol) VALUES (%s, %s, %s)",
             usuarios
         )
         conn.commit()
@@ -120,24 +117,17 @@ def insertar_usuarios():
 # -----------------------------
 # RUTA DE VALIDACION DE USUARIO
 # -----------------------------
-def validar_usuario(nombre, contrasenia):
-    try:
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute("""
-            SELECT usuario_id, nombre, contrasenia, rol, estado 
-            FROM usuarios 
-            WHERE nombre = %s AND contrasenia = %s
-        """, (nombre, contrasenia))
-        user = cursor.fetchone()
-        cursor.close()
-        conn.close()
-        return user  # Esto devuelve una tupla
-    except Exception as e:
-        print(f"Error en validación: {e}")
-        return None
-
-
+def validar_usuario(usuario, contrasena):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute(
+        "SELECT * FROM usuarios WHERE nombre = %s AND contrasenia = %s",
+        (usuario, contrasena)
+    )
+    user = cursor.fetchone()
+    cursor.close()
+    conn.close()
+    return user
 # --------------------------
 # RUTA LOGIN
 # --------------------------
@@ -150,17 +140,17 @@ def login():
     global attempts_left
     error = None
 
-    if 'nombre' in session:
+    if 'usuario' in session:
         return redirect(url_for('dashboard'))
 
     if request.method == 'POST':
-        nombre = request.form['nombre']
-        contrasenia = request.form['contrasenia']
+        usuario = request.form['usuario']
+        contrasena = request.form['contrasena']
 
-        user = validar_usuario( nombre, contrasenia)
+        user = validar_usuario(usuario, contrasena)
 
         if user:
-            session['nombre'] = user[1]  # user[1] = nombre
+            session['usuario'] = user[1]  # user[1] = usuario
             session['rol'] = user[3]      # user[3] = rol
             print(">> Sesión iniciada:", session)
 
@@ -204,7 +194,7 @@ def registrar_usuario():
             else:
                 # Insertar nuevo usuario
                 cursor.execute(
-                    "INSERT INTO usuarios (nombre, contrasenia, rol) VALUES (%s, %s, %s)",
+                    "INSERT INTO usuarios (nombre, contrasena, rol) VALUES (%s, %s, %s)",
                     (nombre, contrasena, rol)
                 )
                 conn.commit()
@@ -221,36 +211,70 @@ def registrar_usuario():
 # --------------------------
 # RUTA DASHBOARD
 # --------------------------
-
 @app.route('/dashboard')
 def dashboard():
-    if 'nombre' not in session:
+    if 'usuario' not in session:
         return redirect(url_for('login'))
 
     rol = session.get('rol')
+    usuario = session.get('usuario')
 
-    if rol == 'administrador':
-        usuarios = obtener_todos_usuarios()  # Función que obtiene todos los usuarios
-        response = make_response(
-            render_template('dashboard.html',
-                            nombre=session['nombre'],
-                            rol=rol,
-                            usuarios=usuarios)
-        )
-    else:
-        # Si no es administrador, no se muestran usuarios
-        response = make_response(
-            render_template('dashboard.html',
-                nombre=session['nombre'],
-                rol=session['rol'],
-                usuarios=usuarios)
-        )
+    usuarios = []  # Inicializa vacío por seguridad
 
-    # Evitar cache para forzar que se actualice la sesión
+    if rol == 'Administrador':
+        usuarios = obtener_todos_usuarios()  # Solo si es administrador
+
+    response = make_response(
+        render_template('dashboard.html',
+                        usuario=usuario,
+                        rol=rol,
+                        usuarios=usuarios)
+    )
+
+    # Evitar cache para que se actualice la sesión correctamente
     response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
     response.headers['Pragma'] = 'no-cache'
     response.headers['Expires'] = '0'
+
     return response
+
+# --------------------------
+# RUTA DECATHLON
+# --------------------------
+@app.route('/decathlon', methods=['GET', 'POST'])
+def decathlon():
+    global df_clp
+    mensaje = None
+
+    if request.method == 'POST':
+        if 'clp_file' in request.files:
+            archivo = request.files['clp_file']
+            if archivo.filename.endswith('.xlsx') or archivo.filename.endswith('.xls'):
+                df_clp = pd.read_excel(archivo)
+                mensaje = "Archivo CLP cargado correctamente."
+            else:
+                mensaje = "Formato no válido. Solo archivos .xlsx o .xls."
+
+    return render_template('decathlon.html', mensaje=mensaje)
+
+
+@app.route('/validar_codigo', methods=['POST'])
+def validar_codigo():
+    global df_clp
+    if df_clp is None:
+        return jsonify({'resultado': '❌ Primero debes subir el archivo CLP.'})
+
+    data = request.get_json()
+    codigo = data.get('codigo')
+
+    # Validar en columna A (índice 0) y obtener valor de columna F (índice 5)
+    resultado = "❌ Código no encontrado."
+    for _, row in df_clp.iterrows():
+        if str(row[0]).strip() == codigo.strip():
+            resultado = str(row[5]).strip()
+            break
+
+    return jsonify({'resultado': resultado})
 
 # --------------------------
 # RUTA CERRAR SESIÓN

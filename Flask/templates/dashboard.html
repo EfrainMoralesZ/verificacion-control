@@ -32,11 +32,12 @@
 
     .sidebar a {
       display: block;
-      color: white;
+      color: black;
       text-decoration: none;
       margin: 15px 0;
       padding: 10px;
       border-radius: 8px;
+      font-weight: bold;
       transition: background-color 0.2s;
     }
 
@@ -82,15 +83,6 @@
     tr:hover {
       background-color: #f9f9f9;
     }
-
-    .estado-activo {
-      color: green;
-    }
-
-    .estado-inactivo {
-      color: red;
-    }
-
   </style>
 
 </head>
@@ -99,39 +91,47 @@
   <div class="sidebar">
     <h1>V&C</h1>
     <h3>Menú</h3>
-    <a href="#">🏠 Dashboard</a>
+    <a href="/decathlon">📦 Decathlon</a>
+    <a href="#">📦 Axo</a>
+    <a href="#">📦 Unilever</a>
     <a href="#">👤 Usuarios</a>
-    <a href="#">📦 Registros</a>
-    <a href="#">⚙️ Configuración</a>
     <a href="/logout">🚪 Cerrar sesión</a>
   </div>
 
   <!-- Contenido principal -->
   <div class="main">
-      <h2>Bienvenido {{ nombre }} (Rol: {{ rol }})</h2>
+    <h2>Bienvenido {{ usuario }} {{ rol }}</h2>
 
-      {% if rol == 'administrador' %}
-      <table border="1">
-        <thead>
-          <tr>
-            <th>ID</th><th>Usuario</th><th>Rol</th><th>Activo</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for u in usuarios %}
-          <tr>
-            <td>{{ u[0] }}</td>
-            <td>{{ u[1] }}</td>
-            <td>{{ u[2] }}</td>
-            <td>{{ 'Sí' if u[3] else 'No' }}</td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+    {% if rol == 'Administrador' %}
+      <p>Acceso total al sistema</p>
+
+      {% if usuarios %}
+        <table border="1">
+          <thead>
+            <tr>
+              <th>ID</th><th>Usuario</th><th>Rol</th><th>Activo</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for u in usuarios %}
+            <tr>
+              <td>{{ u[0] }}</td>
+              <td>{{ u[1] }}</td>
+              <td>{{ u[3] }}</td>
+              <td>{{ 'Sí' if u[3] else 'No' }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
       {% else %}
-      <p>No tienes permiso para ver esta información.</p>
+        <p>No hay usuarios registrados.</p>
       {% endif %}
-    </div>
+
+      {% elif rol == 'usuario' %}
+        <p>Acceso limitado</p>
+      {% else %}
+        <p>Rol Ejecutivo Tecnico</p>
+      {% endif %}
   </div>
 </body>
 </html>
